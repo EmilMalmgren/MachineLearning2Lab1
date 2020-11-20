@@ -4,8 +4,8 @@ import random as random
 
 
 class Layer:
-    def __init__(self, layer_size, activation_function):
-        self.nodes = []
+    def __init__(self, nodes, weights, activation_function):
+        self.nodes = nodes
         self.acivation_function = activation_function
         for i in range(layer_size):
             nodes.add(Node(layer_size))
@@ -25,6 +25,7 @@ class ComplexNode(Node):
         for i in range(no_weights - 1):
             self.weights.add(random(0, 1))
 
+
     def forward(self):
         pass
 
@@ -32,22 +33,22 @@ class ComplexNode(Node):
         pass
 
 class MLP:
-    def __init__(self, loss_function, no_layers, inputs):
+    def __init__(self):
         self.layers = []
 
-
-
-
-        for i in range(no_layers - 1):
-            self.layers.add(Layer(no_layerNodes, no_weights))
-
     def addInputLayer(self, inputs):
-        for i in range(inputs -1):
-            self.layers[0].nodes.append(Node(inputs[i]))
+        nodes = []
+        for i in range(len(inputs)):
+            nodes.append(Node(inputs[i], None, None))
 
+        self.layers.append(Layer(nodes))
 
-    def add_complexlayer(self, size, activation_function):
-        self.layers.append(Layer(size, activation_function))
+    def add_complexlayer(self, inputs, weights):
+        nodes = []
+        for i in range(len(inputs)):
+            nodes.append(Node(inputs[i], weights, None))
+
+        self.layers.append(Layer(inputs, weights, None))
 
     def _backprop(self, x, y, d_loss, learning_rate):
         pass
