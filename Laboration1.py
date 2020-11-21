@@ -13,14 +13,21 @@ class LossFunction:
     def backward(predictions, correct_outputs):
         return 2 * (predictions - correct_outputs)
 
-class LinearActivationFunction:
+class ActivationFunction:
+    @staticmethod
+    def forward(z): pass
+
+    @staticmethod
+    def backward(z): pass
+
+class LinearActivationFunction(ActivationFunction):
     @staticmethod
     def forward(z): return z
 
     @staticmethod
     def backward(z): return np.ones(z.size)
 
-class SigmoidActivationFunction:
+class SigmoidActivationFunction(ActivationFunction):
     @staticmethod
     def forward(z): return 1 / (1 + np.e ** (-z))
 
@@ -30,10 +37,10 @@ class SigmoidActivationFunction:
 class Layer:
     def __init__(self, numberOfNodesPerHiddenLayer, activationFunction, numberOfWeights):
         self.nodes = []
-        self.activationFunction = activationFunction
+        self.values = []
 
         for i in range(numberOfNodesPerHiddenLayer):
-            self.nodes.append(ComplexNode(numberOfWeights))
+            self.nodes.append(ComplexNode(numberOfWeights,activationFunction))
 
 
 class InputLayer:
@@ -48,11 +55,6 @@ class InputLayer:
 
             self.nodes.append(nodes)
 
-    def forward(self, z):
-        LinearActivationFunction.forward(z)
-
-    def backprop(self, z):
-        LinearActivationFunction.backward(z)
 
 class Node:
 
@@ -64,7 +66,11 @@ class Node:
 
 
 class ComplexNode(Node):
-    def __init__(self, numberOfWeights):
+    def __init__(self, numberOfWeights,activationFunction):
+        self.activationFunction = activationFunction
+        self.dLoss = 0
+        self.dw = []
+        self.db = 0
         super(ComplexNode, self).__init__(0)
         self.b = random.random(0, 1)
         self.weights = []
@@ -76,18 +82,43 @@ class ComplexNode(Node):
         for k in range(values):
             z += (values[k] * self.weights[k])
         z += b
-        self.value = SigmoidActivationFunction.forward(z)
+        self.value = self.activationFunction.forward(z)
 
 
-    def backprop(self, z):
-        pass
+    def backprop(self, values):
+        for i in range(self.weights):
+            self.dw.append(self.dLoss*self.activationFunction.backward(self.value)*values[i])
+        self.db = self.dLoss*self.activationFunction.backward(self.value)
+
+    def updateDLoss(self, dbs, weights):
+        sum = 0
+        for i in range(dbs):
+            sum+= dbs[i]*weights[i]
+        self.dLoss = sum
+
+    def updateOutputDLoss(self,actualValue):
+        self.dLoss = 2* (actualValue - self.value)
+
+    def getDb(self):
+        return self.db
+
+    def getWeights(self):
+        return self.weights
+
+    def updateWeightsAndB(self, lRate):
+        self.weights -= self.dw *lRate
+        self.b -= self.db * lRate
 
 
 class MLP:
     def __init__(self, data, numberOfHiddenLayers, numberOfNodesPerHiddenLayer):
-        self.data = data
         self.layers = []
+        self.targets = []
 
+        for i in range(len(data)):
+            self.targets.append(data[i][0].pop())
+
+        self.data = data
         self.addInputLayer()
         self.addComplexLayer(numberOfNodesPerHiddenLayer, SigmoidActivationFunction, len(data[0]))
         for i in range(numberOfHiddenLayers -1):
@@ -112,13 +143,30 @@ class MLP:
         self.layers[0].addData(x)
         for i in range(n_epochs):
             #forward
-            for j in range(1, layers):
-                values = []
-                for previousNode in layers[j - 1].nodes:
-                    values.append(previousNode.getValue())
+            for row in self.layers[0].nodes:
+                for j in range(1, layers):
+                    values = []
+                    for previousNode in layers[j - 1].nodes:
+                        values.append(previousNode.getValue())
+                    layers[j].values = values
+                    for node in layers[j].nodes: #för varje nod i första hidden layer
+                        node.forward(values)
 
-                for node in layers[j].nodes: #för varje nod i första hidden layer
-                    node.forward(values)
+                layers[len(layers)-1][0].updateOutputDLoss(self.targets[row])
+                layers[len(layers) - 1][0].backprop(values)
+
+                for layer in range(len(layers)-2,1,-1):
+                    dbs = []
+                    weights = []
+                    for previousNode in layers[layer - 1].nodes:
+                        dbs.append(previousNode.getDb())
+                        weights.append(previousNode.getWeights())
+                        previousNode.updateWeightsAndB(learning_rate)
+
+                    for node in range(layers[layer].nodes): #för varje nod i första hidden layer
+                        node.updateDLoss(dbs[node],weights[node])
+                        node.backprop(values)
+
 
             #loss
             layers[len(layers -1)]
