@@ -17,10 +17,19 @@ class Normalizer:
             self.mean.append(np.mean(x[:, i]))
             self.std.append(np.std(x[:, i]))
 
+<<<<<<< HEAD
         self.mean.append(np.mean(y))
         self.std.append(np.std(y))
         self.mean = np.array(self.mean)
         self.std = np.array(self.std)
+=======
+class ActivationFunction:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def forward(z): pass
+>>>>>>> b5182f381c72924ee9807330625107ab197fdbfd
 
     def normalize(self, x, y):
         return (x - self.mean[:-1]) / self.std[:-1], (y - self.mean[-1]) / self.std[-1]
@@ -33,7 +42,11 @@ class LinearActivationFunction:
     def forward(z): return z
 
     @staticmethod
+<<<<<<< HEAD
     def backward(z): return z * (1 - z) #np.ones(z)
+=======
+    def backward(z): return np.ones(1)
+>>>>>>> b5182f381c72924ee9807330625107ab197fdbfd
 
 class SigmoidActivationFunction:
     @staticmethod
@@ -42,11 +55,89 @@ class SigmoidActivationFunction:
     @staticmethod
     def backward(z): return z * (1 - z)
 
+<<<<<<< HEAD
 
 class SquaredError(object):
     @staticmethod
     def squared_error_forward(expected, actual):
         return (expected - actual)**2
+=======
+class Layer:
+    def __init__(self, numberOfNodesPerHiddenLayer, activationFunction, numberOfWeights):
+        self.nodes = []
+        self.values = []
+
+        for i in range(numberOfNodesPerHiddenLayer):
+            self.nodes.append(ComplexNode(numberOfWeights, activationFunction))
+
+
+class InputLayer:
+    def __init__(self):
+        self.nodes = []
+
+    def addData(self, x):
+        for i in range(len(x)):
+            nodes = []
+            for j in range(len(x[i])):
+                nodes.append(Node(x[i][j]))
+
+            self.nodes.append(nodes)
+
+
+class Node:
+
+    def __init__(self, value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+
+
+class ComplexNode(Node):
+    def __init__(self, numberOfWeights,activationFunction):
+        self.activationFunction = activationFunction
+        self.dLoss = 0
+        self.dw = []
+        self.db = 0
+        super(ComplexNode, self).__init__(0)
+        self.b = random.random()
+        self.weights = []
+        for i in range(numberOfWeights):
+            self.weights.append(random.random())
+
+    def forward(self, values):
+        z = 0
+        for k in range(len(values)):
+            z += (float(values[k]) * self.weights[k])
+        z += self.b
+        self.value = self.activationFunction.forward(z)
+
+    def backprop(self, values):
+        dws = []
+        for i in range(len(self.weights)):
+            dws.append(self.dLoss * self.activationFunction.backward(self.value)*values[i])
+        self.dw = dws
+        self.db = self.dLoss * self.activationFunction.backward(self.value)
+
+    def updateDLoss(self, dbs, weights):
+        sum = 0
+        for i in range(dbs):
+            sum += dbs[i] * weights[i]
+        self.dLoss = sum
+
+    def updateOutputDLoss(self, actualValue):
+        self.dLoss = 2 * (float(actualValue) - self.value)
+
+    def getDb(self):
+        return self.db
+
+    def getWeights(self):
+        return self.weights
+
+    def updateWeightsAndB(self, lRate):
+        self.weights -= float(self.dw) * lRate
+        self.b -= self.db * lRate
+>>>>>>> b5182f381c72924ee9807330625107ab197fdbfd
 
     @staticmethod
     def squared_error_backward(expected, actual):
@@ -55,12 +146,25 @@ class SquaredError(object):
 class MLP:
     def __init__(self, n_nodes, n_hidden_layers):
         self.layers = []
+<<<<<<< HEAD
         self.n_nodes = n_nodes
         self.n_hidden_layers = n_hidden_layers
+=======
+        self.addInputLayer()
+        self.addComplexLayer(numberOfNodesPerHiddenLayer, SigmoidActivationFunction, len(data[0])-1)
+        for i in range(numberOfHiddenLayers -1):
+            self.addComplexLayer(numberOfNodesPerHiddenLayer, SigmoidActivationFunction, numberOfNodesPerHiddenLayer)
+
+        self.addOutputLayer(1, LinearActivationFunction, numberOfNodesPerHiddenLayer)
+>>>>>>> b5182f381c72924ee9807330625107ab197fdbfd
 
     def add_layer(self, n_nodes, n_inputs, activation_function):
         self.layers.append(Layer(n_nodes, n_inputs, activation_function))
 
+    def train(self, data, learning_rate=0.01, n_epochs=100):
+        targets = []
+        for i in range(len(data)):
+            targets.append(data[i].pop(0))
 
     def _backprop(self, x, y, d_loss, learning_rate):
         pass
@@ -151,6 +255,7 @@ class Layer:
     def backprop(self, loss, learning_rate):
         pass
 
+<<<<<<< HEAD
     def calculate(self, weights, inputs):
         output = weights[-1]
         for i in range(len(weights)-1):
@@ -182,3 +287,17 @@ MLP = MLP(5, 2)
 MLP.train(x, y, 0.1, 100)
 a = 1
 
+=======
+dataset = []
+with open("C:/Users/EmilMa/Skolarbete/repos/MachineLearning2Lab1/datasets/boston.csv", 'r') as file:
+    reader = csv.reader(file)
+    for row in reader:
+        dataset.append(row)
+mlp = MLP(dataset, 2, 4)
+
+numberOfHiddenLayers = 2
+numberOfNodesPerHiddenLayer = 4
+mlp = MLP(dataset, numberOfHiddenLayers, numberOfNodesPerHiddenLayer)
+mlp.train(dataset)
+x =5
+>>>>>>> b5182f381c72924ee9807330625107ab197fdbfd
